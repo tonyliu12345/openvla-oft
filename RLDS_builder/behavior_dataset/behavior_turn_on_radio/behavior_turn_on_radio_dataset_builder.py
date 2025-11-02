@@ -32,6 +32,8 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
 
     for path in paths:
         ret = _parse_example(path)
+        if ret is not None:
+            yield ret
         yield ret
 
 
@@ -43,8 +45,8 @@ class behavior_turn_on_radio(MultiThreadedDatasetBuilder):
       '1.0.1': 'Initial release.',
     }
 
-    N_WORKERS = 1             # number of parallel workers for data conversion
-    MAX_PATHS_IN_MEMORY = 1   # number of paths converted & stored in memory before writing to disk
+    N_WORKERS = 24             # number of parallel workers for data conversion
+    MAX_PATHS_IN_MEMORY = 8   # number of paths converted & stored in memory before writing to disk
                                # -> the higher the faster / more parallel conversion, adjust based on avilable RAM
                                # note that one path may yield multiple episodes and adjust accordingly
     PARSE_FCN = _generate_examples      # handle to parse function from file paths to RLDS episodes
