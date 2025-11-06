@@ -32,7 +32,9 @@ def _generate_examples(paths) -> Iterator[Tuple[str, Any]]:
 
     for path in paths:
         ret = _parse_example(path)
-        yield ret
+        if ret is not None:
+            yield ret
+
 
 
 class behavior_turn_on_radio(MultiThreadedDatasetBuilder):
