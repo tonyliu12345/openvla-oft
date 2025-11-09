@@ -46,8 +46,6 @@ torchrun --standalone --nnodes 1 --nproc-per-node $SLURM_GPUS_ON_NODE vla-script
   --save_latest_checkpoint_only False \
   --lora_rank 32 \
   --run_id_note $RUN_ID \
-  --wandb_entity $WANDB_ENTITY \
-  --wandb_project $WANDB_PROJECT \
   --image_aug True 
   # --use_val_set True \
   # --val_freq 10000 \
