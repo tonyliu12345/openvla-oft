@@ -1,26 +1,27 @@
 #!/bin/bash
-
-#SBATCH --job-name=ft-openvla
-#SBATCH --account=viscam
-#SBATCH --partition=viscam
-#SBATCH --exclude=svl13,svl12
-#SBATCH --nodes=1
+#SBATCH --job-name="train_behavior"
+#SBATCH --account=vision
+#SBATCH --partition=svl
+#SBATCH --exclude=svl12,svl13
+#SBATCH --nodes=2
 #SBATCH --gres=gpu:titanrtx:4
 #SBATCH --ntasks-per-node=4
 #SBATCH --mem=350G
 #SBATCH --cpus-per-task=8
 #SBATCH --time=3-00:00:00
-#SBATCH --output=slurm_logs/finetune.out
-#SBATCH --error=slurm_logs/finetune.err
+#SBATCH --output=outputs/sc/train_behavior_%j.out
+#SBATCH --error=outputs/sc/train_behavior_%j.err
+# notifications for job done & fail
+##SBATCH --mail-type=END,FAIL
+##SBATCH --mail-user=wsai@stanford.edu
+
 
 eval "$(conda shell.bash hook)"
 conda activate openvla-oft
 
 DATASET_ROOT_PATH=/vision/u/yinhang/data/openvla
 DATASET_NAME=behavior_turn_on_radio
-CHECKPOINT_PATH=/vision/u/yinhang/openvla-oft/checkpoints
-WANDB_ENTITY=evansh666-stanford-university
-WANDB_PROJECT=OpenVLA-OFT
+CHECKPOINT_PATH=/vision/u/yinhang/forked_openvla/b1k-baselines/baselines/openvla-oft/checkpoints
 RUN_ID=10_acts_chunk--continuous_acts--L1_regression--3img--proprio_state--film
 INPUT_NUM_IMGS=3
 mkdir -p $CHECKPOINT_PATH
