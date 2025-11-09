@@ -3,7 +3,7 @@
 #SBATCH --account=vision
 #SBATCH --partition=svl
 #SBATCH --exclude=svl12,svl13
-#SBATCH --nodes=2
+#SBATCH --nodes=1
 #SBATCH --gres=gpu:titanrtx:4
 #SBATCH --ntasks-per-node=4
 #SBATCH --mem=350G
@@ -28,7 +28,7 @@ mkdir -p $CHECKPOINT_PATH
 
 export HF_HOME=/vision/u/yinhang/cache/huggingface
 
-torchrun --standalone --nnodes 1 --nproc-per-node $SLURM_GPUS_ON_NODE vla-scripts/finetune.py \
+torchrun --standalone --nnodes 1 --nproc-per-node 4 vla-scripts/finetune.py \
   --vla_path openvla/openvla-7b \
   --data_root_dir $DATASET_ROOT_PATH \
   --dataset_name $DATASET_NAME \
