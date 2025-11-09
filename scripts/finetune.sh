@@ -22,6 +22,9 @@ conda activate openvla-oft
 DATASET_ROOT_PATH=/vision/u/yinhang/data/openvla
 DATASET_NAME=behavior_turn_on_radio
 CHECKPOINT_PATH=/vision/u/yinhang/forked_openvla/b1k-baselines/baselines/openvla-oft/checkpoints
+export WANDB_API_KEY=34bdd99397e04d65e002658e4f2713aed137813b
+export WANDB_ENTITY=tonyliu12345
+export WANDB_PROJECT=B1K
 RUN_ID=10_acts_chunk--continuous_acts--L1_regression--3img--proprio_state--film
 INPUT_NUM_IMGS=3
 mkdir -p $CHECKPOINT_PATH
@@ -46,6 +49,8 @@ torchrun --standalone --nnodes 1 --nproc-per-node 4 vla-scripts/finetune.py \
   --save_latest_checkpoint_only False \
   --lora_rank 32 \
   --run_id_note $RUN_ID \
+  --wandb_entity $WANDB_ENTITY \
+  --wandb_project $WANDB_PROJECT \
   --image_aug True 
   # --use_val_set True \
   # --val_freq 10000 \
