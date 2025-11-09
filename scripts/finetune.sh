@@ -30,6 +30,7 @@ INPUT_NUM_IMGS=3
 mkdir -p $CHECKPOINT_PATH
 
 export HF_HOME=/vision/u/yinhang/cache/huggingface
+sed -i 's/torch\.bfloat16/torch.float16/g' vla-scripts/finetune.py
 
 torchrun --standalone --nnodes 1 --nproc-per-node 4 vla-scripts/finetune.py \
   --vla_path openvla/openvla-7b \
