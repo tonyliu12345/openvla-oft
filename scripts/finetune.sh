@@ -59,7 +59,7 @@ torchrun --standalone --nproc-per-node 8 --master-port $MASTER_PORT vla-scripts/
   --run_root_dir "$CHECKPOINT_PATH" \
   --use_l1_regression True \
   --use_diffusion False \
-  --use_film True \
+  --use_film False \
   --num_images_in_input 3 \
   --use_proprio True \
   --batch_size 1 \
