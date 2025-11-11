@@ -246,7 +246,7 @@ def init_module(
         cfg (FinetuneConfig): Training configuration.
         device_id (str): Device ID.
         module_args (dict): Args for initializing the module.
-        to_bf16 (bool): Whether to convert to torch.bfloat16 data type.
+        to_bf16 (bool): Whether to convert to torch.float16 data type.
         find_unused_params (bool): Whether to detect parameters without gradients in distributed training.
 
     Returns:
@@ -260,7 +260,7 @@ def init_module(
         module.load_state_dict(state_dict)
 
     if to_bf16:
-        module = module.to(torch.bfloat16)
+        module = module.to(torch.float16)
     module = module.to(device_id)
 
     return wrap_ddp(module, device_id, find_unused_params)
@@ -310,7 +310,7 @@ def run_forward_pass(
     metrics = {}
 
     # Get ground-truth action labels
-    ground_truth_actions = batch["actions"].to(device_id).to(torch.bfloat16)
+    ground_truth_actions = batch["actions"].to(device_id).to(torch.float16)
 
     # [Only for diffusion] Sample noisy actions used as input for noise predictor network
     if use_diffusion:
@@ -324,11 +324,11 @@ def run_forward_pass(
         noise, noisy_actions, diffusion_timestep_embeddings = None, None, None
 
     # VLA forward pass
-    with torch.autocast("cuda", dtype=torch.bfloat16):
+    with torch.autocast("cuda", dtype=torch.float16):
         output: CausalLMOutputWithPast = vla(
             input_ids=batch["input_ids"].to(device_id),
             attention_mask=batch["attention_mask"].to(device_id),
-            pixel_values=batch["pixel_values"].to(torch.bfloat16).to(device_id),
+            pixel_values=batch["pixel_values"].to(torch.float16).to(device_id),
             labels=batch["labels"],
             output_hidden_states=True,
             proprio=batch["proprio"] if use_proprio else None,
@@ -380,7 +380,7 @@ def run_forward_pass(
         actions_hidden_states = (
             text_hidden_states[current_action_mask | next_actions_mask]
             .reshape(batch_size, NUM_ACTIONS_CHUNK * ACTION_DIM, -1)
-            .to(torch.bfloat16)
+            .to(torch.float16)
         )  # (B, act_chunk_len, D)
 
         if use_l1_regression:
@@ -481,7 +481,7 @@ def run_diffusion_sampling(
     noise = torch.randn(
         size=(batch_size, NUM_ACTIONS_CHUNK, ACTION_DIM),
         device=device_id,
-        dtype=torch.bfloat16,
+        dtype=torch.float16,
     )  # (B, chunk_len, action_dim)
 
     # Set diffusion timestep values
@@ -498,11 +498,11 @@ def run_diffusion_sampling(
         )  # (B, llm_dim)
         diffusion_timestep_embeddings = diffusion_timestep_embeddings.unsqueeze(1)  # (B, 1, llm_dim)
 
-        with torch.autocast("cuda", dtype=torch.bfloat16):
+        with torch.autocast("cuda", dtype=torch.float16):
             output = vla(
                 input_ids=batch["input_ids"].to(device_id),
                 attention_mask=batch["attention_mask"].to(device_id),
-                pixel_values=batch["pixel_values"].to(torch.bfloat16).to(device_id),
+                pixel_values=batch["pixel_values"].to(torch.float16).to(device_id),
                 labels=batch["labels"],
                 output_hidden_states=True,
                 proprio=batch["proprio"] if use_proprio else None,
@@ -520,7 +520,7 @@ def run_diffusion_sampling(
             actions_hidden_states = text_hidden_states[current_action_mask | next_actions_mask].reshape(
                 batch_size, NUM_ACTIONS_CHUNK * ACTION_DIM, -1
             )  # (B, act_chunk_len, D)
-            actions_hidden_states = actions_hidden_states.to(torch.bfloat16)
+            actions_hidden_states = actions_hidden_states.to(torch.float16)
             # Predict noise
             noise_pred = action_head.module.predict_noise(actions_hidden_states)
 
@@ -652,7 +652,7 @@ def save_training_checkpoint(
     # Note: Can be very slow on some devices; if so, we recommend merging offline
     if cfg.use_lora and cfg.merge_lora_during_training:
         base_vla = AutoModelForVision2Seq.from_pretrained(
-            cfg.vla_path, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, trust_remote_code=True
+            cfg.vla_path, torch_dtype=torch.float16, low_cpu_mem_usage=True, trust_remote_code=True
         )
         merged_vla = PeftModel.from_pretrained(base_vla, adapter_dir)
         merged_vla = merged_vla.merge_and_unload()
@@ -834,7 +834,7 @@ def finetune(cfg: FinetuneConfig) -> None:
     processor = AutoProcessor.from_pretrained(cfg.vla_path, trust_remote_code=True)
     vla = AutoModelForVision2Seq.from_pretrained(
         cfg.vla_path,
-        torch_dtype=torch.bfloat16,
+        torch_dtype=torch.float16,
         low_cpu_mem_usage=True,
         trust_remote_code=True,
     ).to(device_id)
