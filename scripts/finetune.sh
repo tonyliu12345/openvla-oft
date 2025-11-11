@@ -44,6 +44,14 @@ AUG_FLAG="--image_aug False"
 # Avoid port collisions
 export MASTER_PORT=$((12000 + RANDOM % 20000))
 
+# Force fp16 on Titan RTX (no BF16 support)
+sed -i 's/torch\.bfloat16/torch.float16/g' vla-scripts/finetune.py
+
+# Replace PEFT target_modules='all-linear' with explicit list
+sed -i "s/target_modules *= *'all-linear'/target_modules=['q_proj','k_proj','v_proj','o_proj','gate_proj','up_proj','down_proj']/g" vla-scripts/finetune.py
+sed -i 's/target_modules *= *"all-linear"/target_modules=["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj","down_proj"]/g' vla-scripts/finetune.py
+
+
 torchrun --standalone --nproc-per-node 8 --master-port $MASTER_PORT vla-scripts/finetune.py \
   --vla_path openvla/openvla-7b \
   --data_root_dir "$DATASET_ROOT_PATH" \
