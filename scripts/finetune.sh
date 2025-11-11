@@ -57,7 +57,7 @@ torchrun --standalone --nproc-per-node 8 --master-port $MASTER_PORT vla-scripts/
   --data_root_dir "$DATASET_ROOT_PATH" \
   --dataset_name "$DATASET_NAME" \
   --run_root_dir "$CHECKPOINT_PATH" \
-  --use_l1_regression False \
+  --use_l1_regression True \
   --use_diffusion False \
   --use_film True \
   --num_images_in_input 3 \
