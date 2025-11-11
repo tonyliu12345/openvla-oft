@@ -839,6 +839,61 @@ def finetune(cfg: FinetuneConfig) -> None:
         trust_remote_code=True,
     ).to(device_id)
 
+    # === Freeze everything by default; LoRA params will be re-enabled ===
+    for p in vla.parameters():
+        p.requires_grad = False
+
+    # If you use LoRA, wrap THEN re-freeze everything that is not LoRA.
+    if cfg.use_lora:
+        lora_config = LoraConfig(
+            r=cfg.lora_rank,
+            lora_alpha=min(cfg.lora_rank, 16),
+            lora_dropout=cfg.lora_dropout,
+            target_modules="all-linear",
+            init_lora_weights="gaussian",
+        )
+        vla = get_peft_model(vla, lora_config)
+
+        # Keep only LoRA adapter weights trainable
+        for name, p in vla.named_parameters():
+            if "lora_" in name:      # lora_A, lora_B (and embeddings if present)
+                p.requires_grad = True
+            else:
+                p.requires_grad = False
+
+    # (Optional but recommended) If FiLM is enabled later, freeze that too.
+    def _freeze_module(m: nn.Module):
+        for p in m.parameters():
+            p.requires_grad = False
+
+    # After any FiLM wrap you do later, call:
+    #   _freeze_module(vla.model.vision_backbone)
+
+    # Safety check: assert only LoRA params are trainable
+    _non_lora_trainables = [n for n, p in vla.named_parameters() if p.requires_grad and "lora_" not in n]
+    if len(_non_lora_trainables) > 0:
+        print("[WARN] Non-LoRA params still trainable:", _non_lora_trainables)
+
+    # ---- If you truly want *LoRA-only* (no continuous heads), force-freeze extras ----
+    # If you set cfg.use_l1_regression or cfg.use_diffusion but still want LoRA-only,
+    # uncomment the lines below *after* you instantiate those modules.
+
+    # if 'action_head' in locals() and action_head is not None:
+    #     _freeze_module(action_head)
+    # if 'noisy_action_projector' in locals() and noisy_action_projector is not None:
+    #     _freeze_module(noisy_action_projector)
+    # if 'proprio_projector' in locals() and proprio_projector is not None:
+    #     _freeze_module(proprio_projector)
+
+    # Helpful printout
+    def _count_trainable(module, tag):
+        n = sum(p.numel() for p in module.parameters() if p.requires_grad)
+        print(f"# trainable params in {tag}: {n}")
+
+    _count_trainable(vla, "VLA (LoRA only)")
+
+
+
     # Set number of images in VLA input
     vla.vision_backbone.set_num_images_in_input(cfg.num_images_in_input)
 
