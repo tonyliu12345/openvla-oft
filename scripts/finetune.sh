@@ -114,6 +114,9 @@ torchrun --standalone --nproc-per-node 8 --master-port "$MASTER_PORT" vla-script
   --run_id_note "$RUN_ID" \
   --wandb_entity "$WANDB_ENTITY" \
   --wandb_project "$WANDB_PROJECT" \
-  $AUG_FLAG
+  $AUG_FLAG \
+  --resume True \
+  --resume_step 10000 \
+  --merge_lora_during_training False
 
 echo "Done: $RUN_ID"
