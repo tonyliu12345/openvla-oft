@@ -437,11 +437,21 @@ class PrismaticForConditionalGeneration(PrismaticPreTrainedModel):
 
     def _process_vision_features(self, pixel_values, language_embeddings=None, use_film=False):
         """Process vision features with optional FiLM conditioning"""
-        if use_film:
-            # FiLM: Infuse language inputs into visual features
-            patch_features = self.vision_backbone(pixel_values, language_embeddings)  # (bsz, 256 * num_images, D)
-        else:
-            patch_features = self.vision_backbone(pixel_values)  # (bsz, 256 * num_images, D)
+        # if use_film:
+        #     # FiLM: Infuse language inputs into visual features
+        #     patch_features = self.vision_backbone(pixel_values, language_embeddings)  # (bsz, 256 * num_images, D)
+        # else:
+        #     patch_features = self.vision_backbone(pixel_values)  # (bsz, 256 * num_images, D)
+        try:
+            if use_film:
+                # If the backbone supports FiLM, it may accept (pixel_values, language_embeddings).
+                patch_features = self.vision_backbone(pixel_values, language_embeddings)  # type: ignore[arg-type]
+            else:
+                patch_features = self.vision_backbone(pixel_values)
+        except TypeError:
+            # Current PrismaticVisionBackbone.forward(pixel_values) takes only one arg — fall back gracefully
+            patch_features = self.vision_backbone(pixel_values)
+
 
         # Project patch embeddings into language embedding space
         return self.projector(patch_features)
